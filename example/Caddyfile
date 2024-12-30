@@ -1,0 +1,48 @@
+{
+    # This part exists so that it's easy to test the module locally--it's not necessary in a real Caddyfile
+    http_port 8081
+    auto_https off
+}
+
+localhost:8081 {
+    route /fr {
+        i18n {
+            # target language(s). If multiple, separate with commas. The best language according to the user's preferences (Accept-Language header) will be chosen.
+            languages fr
+            # the language the original response is written in
+            source_language en
+            # where to search for LANGUAGE.po files. Here for example, we expect example/messages/fr.po to exist
+            translations example/messages
+
+            #
+            # Following directives are optional, these are the default values:
+            #
+
+            # HTML tag to look for translatable content: content between <i18n> and </i18n> will be translated
+            html_tag i18n 
+
+            # HTML attribute to look for translatable content: content between any tag with an i18n attribute will be translated. Also governs the name of the context attribute: i18n-context here
+            html_attribute i18n 
+
+            # Uncomment this one to enable adding new strings to the .po files when they are missing but needed. 
+            # For example, if a response contains "<span i18n>works</span>", the module will add the "works" msgid with an empty msgtxt to the .po file if it's missing.
+            # update_translations 
+        }
+
+        # Replace this with any usual handler: file_server, reverse_proxy, etc.
+        header Content-Type text/html
+        respond "<span i18n>works</span>"
+       
+    }
+    route /en {
+        # Same thing as above. Here, we target the english language. Being able to separate this allows us to, for example, have explicit routes or subdomains for each language.
+        # Note that, even when targetting the source language, having the i18n middleware is useful, to strip out the i18n marker attributes and tags from the final response.
+        i18n {
+            languages en
+            source_language en
+            translations example/messages
+        }
+        header Content-Type text/html
+        respond "<span i18n>works</span>"
+    }
+}
