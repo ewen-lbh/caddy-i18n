@@ -1,6 +1,6 @@
 # caddy-i18n
 
-Use standard [PO translation files](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html) to translate HTML responses served via a [Caddy](https://caddyserver.com/) web server.
+Use standard [GNU Gettext PO translation files](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html) to translate HTML responses served via a [Caddy](https://caddyserver.com/) web server.
 
 ## Installation
 
