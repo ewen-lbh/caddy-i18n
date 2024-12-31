@@ -1,3 +1,4 @@
+// Package caddy_i18n provides a middleware that translates HTML responses to the user's preferred language, by using standard GNU Gettext .po files. Translatable strings are marked as such in the HTML using attributes and or tags. The middleware strips out those markers and replaces the strings with their translations.
 package caddy_i18n
 
 import (
@@ -20,11 +21,17 @@ var _ caddy.Validator = (*I18n)(nil)
 var _ caddyhttp.MiddlewareHandler = (*I18n)(nil)
 
 type I18n struct {
+	// The directory where the .po files are stored. The files must be named LANGUAGE.po, where LANGUAGE is the language code (see the languages field).
 	Translations       string   `json:"translations,omitempty"`
+	// The HTML attribute used to mark inner content of the tag it is placed on as translatable strings. Defaults to i18n.
 	HTMLAttribute      string   `json:"html_attribute,omitempty"`
+	// The HTML tag used to mark inner content of the tag it is placed on as translatable strings. Defaults to i18n.
 	HTMLTag            string   `json:"html_tag,omitempty"`
+	// The language code of the content the original responses are written in. Defaults to en.
 	SourceLanguage     string   `json:"source_language,omitempty"`
+	// The target languages we should attempt to translate to.
 	Languages          []string `json:"languages,omitempty"`
+	// Update the .po files with new translatable strings found in the HTML responses. Disabled by default.
 	UpdateTranslations bool     `json:"update_translations,omitempty"`
 
 	catalog         *translationsCatalogs

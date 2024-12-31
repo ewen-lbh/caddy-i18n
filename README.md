@@ -7,7 +7,7 @@ Use standard [GNU Gettext PO translation files](https://www.gnu.org/software/get
 Install [xcaddy](https://caddyserver.com/docs/build#xcaddy)
 
 ```bash
-xcaddy build --with github.com/ewen-lbh/caddy-i18n@v0.1.0
+xcaddy build --with github.com/ewen-lbh/caddy-i18n@v0.1.2
 ```
 
 ## Usage
