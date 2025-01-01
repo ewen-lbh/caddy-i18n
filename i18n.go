@@ -152,7 +152,7 @@ func (m *I18n) loadTranslations() (translationsCatalogs, error) {
 			return nil, fmt.Errorf("while loading translations for %s: %w", languageCode, err)
 		}
 
-		poFile.SetSourceLanguage(language.English)
+		poFile.SetSourceLanguage(sourceLanguage)
 		translations[languageCode] = &translationCatalog{
 			poFile:           poFile,
 			seenMessages:     mapset.NewSet(),
