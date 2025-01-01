@@ -27,6 +27,7 @@ type translationCatalog struct {
 	poFilesDirectory string
 	markerAttribute  string
 	markerTag        string
+	exposeToJS       bool
 	*zap.Logger
 }
 
@@ -53,6 +54,11 @@ func (t *translationCatalog) translatePage(source []byte) (string, error) {
 func (t *translationCatalog) translate(root *html.Node) string {
 	// Open files
 	doc := goquery.NewDocumentFromNode(root)
+
+	// Expose JS constant
+	if t.exposeToJS {
+		doc.Find("head").AppendHtml(fmt.Sprintf("<script>window.i18nLanguage = %q; window.i18nSourceLanguage = %q;</script>", t.language, t.sourceLanguage))
+	}
 
 	doc.Find(fmt.Sprintf("%s, [%s]", t.markerTag, t.markerAttribute)).Each(func(_ int, element *goquery.Selection) {
 		element.RemoveAttr(t.markerAttribute)
@@ -170,6 +176,7 @@ func (m *I18n) loadTranslations() (translationsCatalogs, error) {
 			poFilesDirectory: m.Translations,
 			markerAttribute:  m.HTMLAttribute,
 			markerTag:        m.HTMLTag,
+			exposeToJS:       m.ExposeToJS,
 			Logger:           m.Logger.With(zap.String("lang", languageCode.String())),
 		}
 		filledTranslationsCount := 0

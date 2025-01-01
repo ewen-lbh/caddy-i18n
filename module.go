@@ -33,6 +33,8 @@ type I18n struct {
 	Languages []string `json:"languages,omitempty"`
 	// Update the .po files with new translatable strings found in the HTML responses. Disabled by default.
 	UpdateTranslations bool `json:"update_translations,omitempty"`
+	// Include a <script>window.i18nLanguage = "...";</script> in the response to expose the language code to JavaScript.
+	ExposeToJS bool `json:"expose_to_js,omitempty"`
 
 	catalog         *translationsCatalogs
 	tagToCatalogKey map[language.Tag]string
@@ -188,6 +190,8 @@ func parseCaddyfileHandler(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler,
 		case "update_translations":
 			module.UpdateTranslations = true
 
+		case "expose_to_js":
+			module.ExposeToJS = true
 		}
 	}
 
