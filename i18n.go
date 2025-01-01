@@ -22,8 +22,8 @@ type translationCatalog struct {
 	poFile           *po.File
 	seenMessages     mapset.Set
 	missingMessages  []po.Message
-	language         string
-	sourceLanguage   string
+	language         language.Tag
+	sourceLanguage   language.Tag
 	poFilesDirectory string
 	markerAttribute  string
 	markerTag        string
@@ -38,7 +38,7 @@ func (t translationCatalog) unusedMessagesFilePath() string {
 	return filepath.Join(t.poFilesDirectory, fmt.Sprintf("%s-unused-messages.yaml", t.language))
 }
 
-type translationsCatalogs map[string]*translationCatalog
+type translationsCatalogs map[language.Tag]*translationCatalog
 
 func (t *translationCatalog) translatePage(source []byte) (string, error) {
 	parsed, err := html.Parse(bytes.NewReader(source))
@@ -135,7 +135,17 @@ func (t *translationCatalog) translate(root *html.Node) string {
 // loadTranslations reads from i18n/[language].po to load translations
 func (m *I18n) loadTranslations() (translationsCatalogs, error) {
 	translations := make(translationsCatalogs)
-	for _, languageCode := range m.Languages {
+	sourceLanguage, err := language.Parse(m.SourceLanguage)
+	if err != nil {
+		return translations, fmt.Errorf("invalid source language code: %w", err)
+	}
+
+	for _, languageCodeStr := range m.Languages {
+		languageCode, err := language.Parse(languageCodeStr)
+		if err != nil {
+			return translations, fmt.Errorf("invalid language code %q: %w", languageCodeStr, err)
+		}
+
 		translationsFilepath := fmt.Sprintf("%s/%s.po", m.Translations, languageCode)
 		poFile, err := po.LoadFile(translationsFilepath)
 		if err != nil {
@@ -148,11 +158,11 @@ func (m *I18n) loadTranslations() (translationsCatalogs, error) {
 			seenMessages:     mapset.NewSet(),
 			missingMessages:  make([]po.Message, 0),
 			language:         languageCode,
-			sourceLanguage:   m.SourceLanguage,
+			sourceLanguage:   sourceLanguage,
 			poFilesDirectory: m.Translations,
 			markerAttribute:  m.HTMLAttribute,
 			markerTag:        m.HTMLTag,
-			Logger:           m.Logger.With(zap.String("lang", languageCode)),
+			Logger:           m.Logger.With(zap.String("lang", languageCode.String())),
 		}
 		filledTranslationsCount := 0
 		for _, msg := range poFile.Messages {
@@ -160,7 +170,7 @@ func (m *I18n) loadTranslations() (translationsCatalogs, error) {
 				filledTranslationsCount++
 			}
 		}
-		m.Logger.With(zap.String("lang", languageCode)).Info(fmt.Sprintf("loaded %d translations", filledTranslationsCount))
+		m.Logger.With(zap.String("lang", languageCode.String())).Info(fmt.Sprintf("loaded %d translations", filledTranslationsCount))
 	}
 	return translations, nil
 }

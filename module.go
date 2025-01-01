@@ -22,17 +22,17 @@ var _ caddyhttp.MiddlewareHandler = (*I18n)(nil)
 
 type I18n struct {
 	// The directory where the .po files are stored. The files must be named LANGUAGE.po, where LANGUAGE is the language code (see the languages field).
-	Translations       string   `json:"translations,omitempty"`
+	Translations string `json:"translations,omitempty"`
 	// The HTML attribute used to mark inner content of the tag it is placed on as translatable strings. Defaults to i18n.
-	HTMLAttribute      string   `json:"html_attribute,omitempty"`
+	HTMLAttribute string `json:"html_attribute,omitempty"`
 	// The HTML tag used to mark inner content of the tag it is placed on as translatable strings. Defaults to i18n.
-	HTMLTag            string   `json:"html_tag,omitempty"`
+	HTMLTag string `json:"html_tag,omitempty"`
 	// The language code of the content the original responses are written in. Defaults to en.
-	SourceLanguage     string   `json:"source_language,omitempty"`
+	SourceLanguage string `json:"source_language,omitempty"`
 	// The target languages we should attempt to translate to.
-	Languages          []string `json:"languages,omitempty"`
+	Languages []string `json:"languages,omitempty"`
 	// Update the .po files with new translatable strings found in the HTML responses. Disabled by default.
-	UpdateTranslations bool     `json:"update_translations,omitempty"`
+	UpdateTranslations bool `json:"update_translations,omitempty"`
 
 	catalog         *translationsCatalogs
 	tagToCatalogKey map[language.Tag]string
@@ -76,16 +76,7 @@ func (m *I18n) Provision(ctx caddy.Context) error {
 		return fmt.Errorf("not all declared languages have translations")
 	}
 
-	availableLanguages := make([]language.Tag, 0, len(catalog))
-	for lang := range catalog {
-		parsed, err := language.Parse(lang)
-		if err != nil {
-			return fmt.Errorf("incorrect language: %w", err)
-		}
-		m.tagToCatalogKey[parsed] = lang
-		availableLanguages = append(availableLanguages, parsed)
-	}
-	m.languageMatcher = language.NewMatcher(availableLanguages)
+	m.languageMatcher = language.NewMatcher(keys(catalog))
 	m.catalog = &catalog
 	return nil
 }
@@ -97,6 +88,16 @@ func (m *I18n) Validate() error {
 
 	if stat, err := os.Stat(m.Translations); err != nil || !stat.IsDir() {
 		return fmt.Errorf("translations directory does not exist or is not a directory")
+	}
+
+	for _, lang := range append(m.Languages, m.SourceLanguage) {
+		parsedLang, err := language.Parse(lang)
+		if err != nil {
+			return fmt.Errorf("invalid language code %q: %w", lang, err)
+		}
+		if _, ok := (*m.catalog)[parsedLang]; !ok {
+			return fmt.Errorf("no translations found for language %s", parsedLang)
+		}
 	}
 
 	return nil
@@ -120,8 +121,8 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 	acceptedLanguages := r.Header.Get("Accept-Language")
 	lang, _ := language.MatchStrings(m.languageMatcher, acceptedLanguages)
 
-	translations := (*m.catalog)[m.tagToCatalogKey[lang]]
-	w.Header().Set("Language", translations.language)
+	translations := (*m.catalog)[lang]
+	w.Header().Set("Language", translations.language.String())
 
 	translated, err := translations.translatePage(untranslated.Bytes())
 	if err != nil {
