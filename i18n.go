@@ -49,7 +49,7 @@ func (t *translationCatalog) translatePage(source []byte) (string, error) {
 	return t.translate(parsed), nil
 }
 
-// TranslateToLanguage translates the given html node to french or english, removing translation-related attributes
+// translate translates the given html node to the target language, removing the translation markers
 func (t *translationCatalog) translate(root *html.Node) string {
 	// Open files
 	doc := goquery.NewDocumentFromNode(root)
@@ -76,6 +76,14 @@ func (t *translationCatalog) translate(root *html.Node) string {
 			} else {
 				element.SetHtml(translated)
 			}
+		}
+	})
+	doc.Find(fmt.Sprintf("[%s-keep-on]", t.markerAttribute)).Each(func(_ int, element *goquery.Selection) {
+		element.RemoveAttr(fmt.Sprintf("%s-keep-on", t.markerAttribute))
+		// delete node if the current language is not the value of the attribute
+		// useful for conditionally including already-translated content (e.g. user-generated content)
+		if element.AttrOr(fmt.Sprintf("%s-keep-on", t.markerAttribute), "") != t.language.String() {
+			element.Remove()
 		}
 	})
 	doc.Find(fmt.Sprintf("[%s-attrs]", t.markerAttribute)).Each(func(_ int, element *goquery.Selection) {
