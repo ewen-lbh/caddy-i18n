@@ -36,7 +36,7 @@ type I18n struct {
 	// Include a <script>window.i18nLanguage = "...";</script> in the response to expose the language code to JavaScript.
 	ExposeToJS bool `json:"expose_to_js,omitempty"`
 
-	catalog         *translationsCatalogs
+	catalogs         *translationsCatalogs
 	tagToCatalogKey map[language.Tag]string
 	languageMatcher language.Matcher
 	*zap.Logger
@@ -69,17 +69,17 @@ func (I18n) CaddyModule() caddy.ModuleInfo {
 func (m *I18n) Provision(ctx caddy.Context) error {
 	// Load all .po files in the
 	m.Logger = ctx.Logger()
-	catalog, err := m.loadTranslations()
+	catalogs, err := m.loadTranslations()
 	if err != nil {
 		return fmt.Errorf("while loading translations: %w", err)
 	}
 
-	if len(catalog) < len(m.Languages) {
+	if len(catalogs) < len(m.Languages) {
 		return fmt.Errorf("not all declared languages have translations")
 	}
 
-	m.languageMatcher = language.NewMatcher(keys(catalog))
-	m.catalog = &catalog
+	m.languageMatcher = language.NewMatcher(keys(catalogs))
+	m.catalogs = &catalogs
 	return nil
 }
 
@@ -97,8 +97,8 @@ func (m *I18n) Validate() error {
 		if err != nil {
 			return fmt.Errorf("invalid language code %q: %w", lang, err)
 		}
-		if _, ok := (*m.catalog)[parsedLang]; !ok {
-			return fmt.Errorf("no translations found for language %s", parsedLang)
+		if _, ok := (*m.catalogs)[parsedLang]; !ok {
+			return fmt.Errorf("no translations found for language %s. available languages: %v", parsedLang, keys(*m.catalogs))
 		}
 	}
 
@@ -123,7 +123,7 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 	acceptedLanguages := r.Header.Get("Accept-Language")
 	lang, _ := language.MatchStrings(m.languageMatcher, acceptedLanguages)
 
-	translations := (*m.catalog)[lang]
+	translations := (*m.catalogs)[lang]
 	w.Header().Set("Language", translations.language.String())
 
 	translated, err := translations.translatePage(untranslated.Bytes())
