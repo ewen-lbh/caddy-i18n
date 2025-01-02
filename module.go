@@ -36,7 +36,7 @@ type I18n struct {
 	// Include a <script>window.i18nLanguage = "...";</script> in the response to expose the language code to JavaScript.
 	ExposeToJS bool `json:"expose_to_js,omitempty"`
 
-	catalogs         *translationsCatalogs
+	catalogs        *translationsCatalogs
 	tagToCatalogKey map[language.Tag]string
 	languageMatcher language.Matcher
 	*zap.Logger
@@ -93,12 +93,15 @@ func (m *I18n) Validate() error {
 	}
 
 	for _, lang := range append(m.Languages, m.SourceLanguage) {
-		parsedLang, err := language.Parse(lang)
+		_, err := language.Parse(lang)
 		if err != nil {
 			return fmt.Errorf("invalid language code %q: %w", lang, err)
 		}
-		if _, ok := (*m.catalogs)[parsedLang]; !ok {
-			return fmt.Errorf("no translations found for language %s. available languages: %v", parsedLang, keys(*m.catalogs))
+	}
+
+	for _, lang := range m.Languages {
+		if _, ok := (*m.catalogs)[language.MustParse(lang)]; !ok {
+			return fmt.Errorf("no translations found for language %s. available languages: %v", language.MustParse(lang), keys(*m.catalogs))
 		}
 	}
 
