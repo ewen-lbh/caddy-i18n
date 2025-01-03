@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/caddyserver/caddy/v2"
@@ -128,16 +129,21 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 
 	translations, ok := (m.catalogs)[lang]
 	if !ok {
-		return fmt.Errorf("no translations found for language %s. available translations: %v", lang, keys(m.catalogs))
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, fmt.Sprintf("no translations found for language %s. available translations: %v", lang, keys(m.catalogs)))
+		return nil
 	}
 	w.Header().Set("Language", translations.language.String())
-	w.Header().Del("Content-Length")
 
 	translated, err := translations.translatePage(untranslated.Bytes())
 	if err != nil {
-		return fmt.Errorf("could not translate %s to %s: %w", r.RequestURI, lang, err)
+		// return fmt.Errorf("could not translate %s to %s: %w", r.RequestURI, lang, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, fmt.Sprintf("could not translate %s to %s: %v", r.RequestURI, lang, err))
+		return nil
 	}
 
+	w.Header().Set("Content-Length", strconv.Itoa(len([]byte(translated))))
 	w.WriteHeader(recorder.Status())
 	_, err = io.WriteString(w, translated)
 	if err != nil {
