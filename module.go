@@ -36,7 +36,7 @@ type I18n struct {
 	// Include a <script>window.i18nLanguage = "...";</script> in the response to expose the language code to JavaScript.
 	ExposeToJS bool `json:"expose_to_js,omitempty"`
 
-	catalogs        *translationsCatalogs
+	catalogs        translationsCatalogs
 	tagToCatalogKey map[language.Tag]string
 	languageMatcher language.Matcher
 	*zap.Logger
@@ -79,7 +79,7 @@ func (m *I18n) Provision(ctx caddy.Context) error {
 	}
 
 	m.languageMatcher = language.NewMatcher(keys(catalogs))
-	m.catalogs = &catalogs
+	m.catalogs = catalogs
 	return nil
 }
 
@@ -100,7 +100,7 @@ func (m *I18n) Validate() error {
 	}
 
 	for _, lang := range m.Languages {
-		if _, ok := (*m.catalogs)[language.MustParse(lang)]; !ok {
+		if _, ok := (m.catalogs)[language.MustParse(lang)]; !ok {
 			return fmt.Errorf("no translations found for language %s. available languages: %v", language.MustParse(lang), keys(*m.catalogs))
 		}
 	}
@@ -126,7 +126,10 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 	acceptedLanguages := r.Header.Get("Accept-Language")
 	lang, _ := language.MatchStrings(m.languageMatcher, acceptedLanguages)
 
-	translations := (*m.catalogs)[lang]
+	translations, ok := (m.catalogs)[lang]
+	if !ok {
+		return fmt.Errorf("no translations found for language %s. available translations: %v", lang, keys(m.catalogs))
+	}
 	w.Header().Set("Language", translations.language.String())
 
 	translated, err := translations.translatePage(untranslated.Bytes())

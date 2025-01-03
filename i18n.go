@@ -39,7 +39,7 @@ func (t translationCatalog) unusedMessagesFilePath() string {
 	return filepath.Join(t.poFilesDirectory, fmt.Sprintf("%s-unused-messages.yaml", t.language))
 }
 
-type translationsCatalogs map[language.Tag]*translationCatalog
+type translationsCatalogs map[language.Tag]translationCatalog
 
 func (t *translationCatalog) translatePage(source []byte) (string, error) {
 	parsed, err := html.Parse(bytes.NewReader(source))
@@ -167,7 +167,7 @@ func (m *I18n) loadTranslations() (translationsCatalogs, error) {
 		}
 
 		poFile.SetSourceLanguage(sourceLanguage)
-		translations[languageCode] = &translationCatalog{
+		translations[languageCode] = translationCatalog{
 			poFile:           poFile,
 			seenMessages:     mapset.NewSet(),
 			missingMessages:  make([]po.Message, 0),
