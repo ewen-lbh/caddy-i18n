@@ -101,7 +101,7 @@ func (m *I18n) Validate() error {
 
 	for _, lang := range m.Languages {
 		if _, ok := (m.catalogs)[language.MustParse(lang)]; !ok {
-			return fmt.Errorf("no translations found for language %s. available languages: %v", language.MustParse(lang), keys(*m.catalogs))
+			return fmt.Errorf("no translations found for language %s. available languages: %v", language.MustParse(lang), keys(m.catalogs))
 		}
 	}
 
