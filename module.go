@@ -79,7 +79,13 @@ func (m *I18n) Provision(ctx caddy.Context) error {
 		return fmt.Errorf("not all declared languages have translations")
 	}
 
-	m.languageMatcher = language.NewMatcher(keys(catalogs))
+	// We re-parse here to guarantee order: the order passed to NewMatcher is meaningfull as the first is the fallback.
+	parsedLanguages := make([]language.Tag, 0, len(m.Languages))
+	for _, lang := range m.Languages {
+		parsedLanguages = append(parsedLanguages, language.MustParse(lang))
+	}
+
+	m.languageMatcher = language.NewMatcher(parsedLanguages)
 	m.catalogs = catalogs
 	return nil
 }
@@ -130,7 +136,7 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 	translations, ok := (m.catalogs)[lang]
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, fmt.Sprintf("no translations found for language %s. available translations: %v", lang, keys(m.catalogs)))
+		io.WriteString(w, fmt.Sprintf("no translations found for language %#v. available translations: %#v", lang, keys(m.catalogs)))
 		return nil
 	}
 	w.Header().Set("Language", translations.language.String())
