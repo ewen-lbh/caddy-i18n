@@ -85,12 +85,12 @@ func (t *translationCatalog) translate(root *html.Node) string {
 		}
 	})
 	doc.Find(fmt.Sprintf("[%s-keep-on]", t.markerAttribute)).Each(func(_ int, element *goquery.Selection) {
-		// element.RemoveAttr(fmt.Sprintf("%s-keep-on", t.markerAttribute))
 		// delete node if the current language is not the value of the attribute
 		// useful for conditionally including already-translated content (e.g. user-generated content)
-		if element.AttrOr(fmt.Sprintf("%s-keep-on", t.markerAttribute), t.language.String()) != t.language.String() {
+		if element.AttrOr(fmt.Sprintf("%s-keep-on", t.markerAttribute), "") != t.language.String() {
 			element.Remove()
 		}
+		element.RemoveAttr(fmt.Sprintf("%s-keep-on", t.markerAttribute))
 	})
 	doc.Find(fmt.Sprintf("[%s-attrs]", t.markerAttribute)).Each(func(_ int, element *goquery.Selection) {
 		element.RemoveAttr(fmt.Sprintf("%s-attrs", t.markerAttribute))
