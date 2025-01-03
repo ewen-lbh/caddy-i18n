@@ -131,6 +131,7 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 		return fmt.Errorf("no translations found for language %s. available translations: %v", lang, keys(m.catalogs))
 	}
 	w.Header().Set("Language", translations.language.String())
+	w.Header().Del("Content-Length")
 
 	translated, err := translations.translatePage(untranslated.Bytes())
 	if err != nil {
