@@ -133,10 +133,10 @@ func (m *I18n) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 	acceptedLanguages := r.Header.Get("Accept-Language")
 	lang, _ := language.MatchStrings(m.languageMatcher, acceptedLanguages)
 
-	translations, ok := (m.catalogs)[lang]
+	translations, ok := (m.catalogs)[lang.Parent()]
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, fmt.Sprintf("no translations found for language %#v. available translations: %#v", lang, keys(m.catalogs)))
+		io.WriteString(w, fmt.Sprintf("no translations found for language %s (from children language %s). available translations: %v", lang.Parent(), lang, keys(m.catalogs)))
 		return nil
 	}
 	w.Header().Set("Language", translations.language.String())
